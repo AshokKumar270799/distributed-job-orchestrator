@@ -1,10 +1,15 @@
+import { promisify } from "node:util";
 import express, { type Request, type Response } from "express";
 import { appConfig } from "./config/app-config";
+import { closeRedis } from "./config/redis";
 import type { EmailJobPayload } from "./jobs/email-job";
 import { enqueueEmailJob } from "./producers/email.producer";
+import { emailDeadLetterQueue } from "./queues/email-dead-letter.queue";
+import { emailQueue } from "./queues/email.queue";
 import { getHealthStatus } from "./services/health.service";
 import { getEmailJobStatus } from "./services/job-status.service";
 import { logger } from "./utils/logger";
+import { registerGracefulShutdown } from "./utils/shutdown";
 
 const app = express();
 
@@ -52,9 +57,18 @@ app.get("/jobs/email/:id", async (request: Request, response: Response) => {
   response.status(200).json(status);
 });
 
-app.listen(appConfig.port, () => {
+const server = app.listen(appConfig.port, () => {
   logger.info("HTTP server listening", {
     service: appConfig.serviceName,
     port: appConfig.port
   });
 });
+
+const closeServer = promisify(server.close.bind(server));
+
+registerGracefulShutdown("http-server", [
+  closeServer,
+  () => emailQueue.close(),
+  () => emailDeadLetterQueue.close(),
+  closeRedis
+]);

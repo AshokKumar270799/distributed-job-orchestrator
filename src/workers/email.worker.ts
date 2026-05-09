@@ -2,11 +2,14 @@ import { Worker, type Job } from "bullmq";
 import { appConfig } from "../config/app-config";
 import { getBullMqConnectionOptions } from "../config/redis";
 import { EmailJobName, type EmailJobPayload, type EmailJobResult } from "../jobs/email-job";
+import { emailDeadLetterQueue } from "../queues/email-dead-letter.queue";
+import { emailQueue } from "../queues/email.queue";
 import { QueueName } from "../queues/queue-names";
 import { createQueueEvents } from "../queues/queue-events";
 import { moveEmailJobToDeadLetter } from "../services/dead-letter.service";
 import { sendEmail } from "../services/email.service";
 import { logger } from "../utils/logger";
+import { registerGracefulShutdown } from "../utils/shutdown";
 
 export const createEmailWorker = (): Worker<EmailJobPayload, EmailJobResult, EmailJobName> =>
   new Worker<EmailJobPayload, EmailJobResult, EmailJobName>(
@@ -26,7 +29,7 @@ export const createEmailWorker = (): Worker<EmailJobPayload, EmailJobResult, Ema
 
 if (require.main === module) {
   const worker = createEmailWorker();
-  createQueueEvents(QueueName.Email);
+  const queueEvents = createQueueEvents(QueueName.Email);
 
   worker.on("ready", () => {
     logger.info("Email worker ready", {
@@ -46,4 +49,11 @@ if (require.main === module) {
       void moveEmailJobToDeadLetter(job, error);
     }
   });
+
+  registerGracefulShutdown("email-worker", [
+    () => worker.close(),
+    () => queueEvents.close(),
+    () => emailQueue.close(),
+    () => emailDeadLetterQueue.close()
+  ]);
 }
