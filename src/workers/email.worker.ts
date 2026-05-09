@@ -2,6 +2,7 @@ import { Worker, type Job } from "bullmq";
 import { getBullMqConnectionOptions } from "../config/redis";
 import { EmailJobName, type EmailJobPayload, type EmailJobResult } from "../jobs/email-job";
 import { QueueName } from "../queues/queue-names";
+import { moveEmailJobToDeadLetter } from "../services/dead-letter.service";
 import { sendEmail } from "../services/email.service";
 
 export const createEmailWorker = (): Worker<EmailJobPayload, EmailJobResult, EmailJobName> =>
@@ -31,5 +32,11 @@ if (require.main === module) {
       message: error.message,
       name: error.name
     });
+  });
+
+  worker.on("failed", (job, error) => {
+    if (job) {
+      void moveEmailJobToDeadLetter(job, error);
+    }
   });
 }

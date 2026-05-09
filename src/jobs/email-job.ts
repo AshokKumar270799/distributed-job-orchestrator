@@ -15,3 +15,12 @@ export interface EmailJobResult {
   deliveredAt: string;
   recipient: string;
 }
+
+export interface EmailDeadLetterJobPayload {
+  originalJobId: string;
+  originalQueue: string;
+  payload: EmailJobPayload;
+  reason: string;
+  failedAt: string;
+  attemptsMade: number;
+}
