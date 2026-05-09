@@ -1,0 +1,40 @@
+{
+  "name": "distributed-job-queue-system",
+  "version": "1.0.0",
+  "description": "Production-grade distributed job queue system with BullMQ, Redis, Express, and TypeScript.",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc --project tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AshokKumar270799/distributed-job-orchestrator.git"
+  },
+  "keywords": [
+    "bullmq",
+    "redis",
+    "distributed-systems",
+    "job-queue",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AshokKumar270799/distributed-job-orchestrator/issues"
+  },
+  "homepage": "https://github.com/AshokKumar270799/distributed-job-orchestrator#readme",
+  "dependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.6.2",
+    "bullmq": "^5.76.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "redis": "^5.12.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^6.0.3"
+  }
+}
