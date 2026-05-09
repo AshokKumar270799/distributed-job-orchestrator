@@ -43,6 +43,16 @@ export const closeRedis = async (): Promise<void> => {
   }
 };
 
-export const redisConnectionOptions = {
-  url: appConfig.redisUrl
-} as const;
+export const getBullMqConnectionOptions = () => {
+  const url = new URL(appConfig.redisUrl);
+
+  return {
+    host: url.hostname,
+    port: Number(url.port || 6379),
+    username: url.username || undefined,
+    password: url.password || undefined,
+    db: Number(url.pathname.replace("/", "") || 0),
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false
+  };
+};
