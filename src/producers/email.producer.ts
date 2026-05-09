@@ -1,3 +1,4 @@
+import type { Job } from "bullmq";
 import { EmailJobName, type EmailJobPayload, type EmailJobResult } from "../jobs/email-job";
 import { emailQueue } from "../queues/email.queue";
 
@@ -37,6 +38,4 @@ export const enqueueEmailJobsBulk = async (
 };
 
 export const getEmailJob = async (jobId: string) =>
-  emailQueue.getJob(jobId) as Promise<
-    import("bullmq").Job<EmailJobPayload, EmailJobResult, EmailJobName> | undefined
-  >;
+  emailQueue.getJob(jobId) as Promise<Job<EmailJobPayload, EmailJobResult, EmailJobName> | undefined>;
