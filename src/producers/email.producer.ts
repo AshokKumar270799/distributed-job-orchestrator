@@ -19,6 +19,23 @@ export const enqueueEmailJob = async (
   };
 };
 
+export const enqueueEmailJobsBulk = async (
+  payloads: EmailJobPayload[]
+): Promise<EnqueueEmailJobResponse[]> => {
+  const jobs = await emailQueue.addBulk(
+    payloads.map((payload) => ({
+      name: EmailJobName.SendEmail,
+      data: payload
+    }))
+  );
+
+  return jobs.map((job) => ({
+    id: String(job.id),
+    queue: job.queueName,
+    name: job.name as EmailJobName
+  }));
+};
+
 export const getEmailJob = async (jobId: string) =>
   emailQueue.getJob(jobId) as Promise<
     import("bullmq").Job<EmailJobPayload, EmailJobResult, EmailJobName> | undefined

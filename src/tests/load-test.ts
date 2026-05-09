@@ -1,6 +1,6 @@
 import { emailDeadLetterQueue } from "../queues/email-dead-letter.queue";
 import { emailQueue } from "../queues/email.queue";
-import { enqueueEmailJob } from "../producers/email.producer";
+import { enqueueEmailJobsBulk } from "../producers/email.producer";
 import { logger } from "../utils/logger";
 
 const getJobCount = (): number => {
@@ -13,9 +13,8 @@ const run = async (): Promise<void> => {
   const jobCount = getJobCount();
   const startedAt = performance.now();
 
-  await Promise.all(
-    Array.from({ length: jobCount }, (_, index) =>
-      enqueueEmailJob({
+  await enqueueEmailJobsBulk(
+    Array.from({ length: jobCount }, (_, index) => ({
         to: `load-test-${index}@example.com`,
         subject: `Load test job ${index}`,
         body: "Synthetic load test email payload",
