@@ -3,6 +3,7 @@ import { appConfig } from "../config/app-config";
 import { getBullMqConnectionOptions } from "../config/redis";
 import { EmailJobName, type EmailJobPayload, type EmailJobResult } from "../jobs/email-job";
 import { QueueName } from "../queues/queue-names";
+import { createQueueEvents } from "../queues/queue-events";
 import { moveEmailJobToDeadLetter } from "../services/dead-letter.service";
 import { sendEmail } from "../services/email.service";
 
@@ -24,6 +25,7 @@ export const createEmailWorker = (): Worker<EmailJobPayload, EmailJobResult, Ema
 
 if (require.main === module) {
   const worker = createEmailWorker();
+  createQueueEvents(QueueName.Email);
 
   worker.on("ready", () => {
     console.log("Email worker ready");
