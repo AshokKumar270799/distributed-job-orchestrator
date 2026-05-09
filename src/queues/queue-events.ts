@@ -1,5 +1,6 @@
 import { QueueEvents } from "bullmq";
 import { getBullMqConnectionOptions } from "../config/redis";
+import { logger } from "../utils/logger";
 import type { QueueName } from "./queue-names";
 
 export const createQueueEvents = (queueName: QueueName): QueueEvents => {
@@ -8,19 +9,19 @@ export const createQueueEvents = (queueName: QueueName): QueueEvents => {
   });
 
   events.on("completed", ({ jobId }) => {
-    console.log("Queue job completed", { queue: queueName, jobId });
+    logger.info("Queue job completed", { queue: queueName, jobId });
   });
 
   events.on("failed", ({ jobId, failedReason }) => {
-    console.error("Queue job failed", { queue: queueName, jobId, failedReason });
+    logger.error("Queue job failed", { queue: queueName, jobId, failedReason });
   });
 
   events.on("stalled", ({ jobId }) => {
-    console.warn("Queue job stalled", { queue: queueName, jobId });
+    logger.warn("Queue job stalled", { queue: queueName, jobId });
   });
 
   events.on("error", (error) => {
-    console.error("Queue events error", {
+    logger.error("Queue events error", {
       queue: queueName,
       message: error.message,
       name: error.name

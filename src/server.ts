@@ -4,6 +4,7 @@ import type { EmailJobPayload } from "./jobs/email-job";
 import { enqueueEmailJob } from "./producers/email.producer";
 import { getHealthStatus } from "./services/health.service";
 import { getEmailJobStatus } from "./services/job-status.service";
+import { logger } from "./utils/logger";
 
 const app = express();
 
@@ -52,5 +53,8 @@ app.get("/jobs/email/:id", async (request: Request, response: Response) => {
 });
 
 app.listen(appConfig.port, () => {
-  console.log(`${appConfig.serviceName} listening on port ${appConfig.port}`);
+  logger.info("HTTP server listening", {
+    service: appConfig.serviceName,
+    port: appConfig.port
+  });
 });

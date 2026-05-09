@@ -1,4 +1,5 @@
 import { createClient, type RedisClientType } from "redis";
+import { logger } from "../utils/logger";
 import { appConfig } from "./app-config";
 
 let redisClient: RedisClientType | null = null;
@@ -13,14 +14,14 @@ export const getRedisClient = (): RedisClientType => {
     });
 
     redisClient.on("error", (error) => {
-      console.error("Redis client error", {
+      logger.error("Redis client error", {
         message: error.message,
         name: error.name
       });
     });
 
     redisClient.on("reconnecting", () => {
-      console.warn("Redis client reconnecting");
+      logger.warn("Redis client reconnecting");
     });
   }
 

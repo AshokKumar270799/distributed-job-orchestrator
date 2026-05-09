@@ -6,6 +6,7 @@ import { QueueName } from "../queues/queue-names";
 import { createQueueEvents } from "../queues/queue-events";
 import { moveEmailJobToDeadLetter } from "../services/dead-letter.service";
 import { sendEmail } from "../services/email.service";
+import { logger } from "../utils/logger";
 
 export const createEmailWorker = (): Worker<EmailJobPayload, EmailJobResult, EmailJobName> =>
   new Worker<EmailJobPayload, EmailJobResult, EmailJobName>(
@@ -28,11 +29,13 @@ if (require.main === module) {
   createQueueEvents(QueueName.Email);
 
   worker.on("ready", () => {
-    console.log("Email worker ready");
+    logger.info("Email worker ready", {
+      concurrency: appConfig.workerConcurrency
+    });
   });
 
   worker.on("error", (error) => {
-    console.error("Email worker error", {
+    logger.error("Email worker error", {
       message: error.message,
       name: error.name
     });
