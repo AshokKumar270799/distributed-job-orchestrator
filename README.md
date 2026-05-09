@@ -97,14 +97,60 @@ for attempts, progress, failure reason, and result data.
 The HTTP server accepts work and writes jobs to Redis through BullMQ. Worker processes run separately
 and reserve jobs from Redis using BullMQ locks, allowing producers and consumers to scale independently.
 
-Flow:
+System flow:
 
 ```text
-Client -> Express API -> Email Producer -> BullMQ Queue -> Redis -> Email Worker -> Result / Failure
+Client
+  -> Express API
+  -> Email Producer
+  -> BullMQ Email Queue
+  -> Redis
+  -> Email Worker
+  -> Completed Result / Retry / Dead-Letter Queue
 ```
 
-See [docs/architecture.md](docs/architecture.md) for queue flow, worker lifecycle, retry behavior,
-dead-letter design, and Redis interaction details.
+### Core Components
+
+| Component | Responsibility |
+| --- | --- |
+| Express API | Accepts job requests, exposes health checks, and returns job status. |
+| Email Producer | Converts validated API payloads into typed BullMQ jobs. |
+| BullMQ Queues | Store pending, active, completed, failed, delayed, and dead-letter jobs. |
+| Redis | Central coordination layer for queue state, locks, retries, events, and scheduling. |
+| Email Worker | Processes email jobs asynchronously with configurable concurrency. |
+| Queue Events | Emits lifecycle events for completed, failed, and stalled jobs. |
+| Structured Logger | Produces JSON logs for API, Redis, worker, and queue lifecycle monitoring. |
+
+### Queue Lifecycle
+
+1. A client submits an email payload through `POST /jobs/email`.
+2. The API validates required fields and calls the email producer.
+3. BullMQ persists the job in Redis with retry and backoff options.
+4. A worker reserves the job, moves it to `active`, and processes it asynchronously.
+5. Successful jobs move to `completed` with a typed result payload.
+6. Failed jobs are retried with exponential backoff until attempts are exhausted.
+7. Permanently failed jobs are copied to `email:dead-letter` with failure context.
+
+### Worker Lifecycle
+
+Workers are independent processes and can be scaled horizontally. Each worker connects to Redis,
+subscribes to the `email` queue, processes jobs up to `WORKER_CONCURRENCY`, and listens for queue
+events. During shutdown, the worker closes active BullMQ connections and queue event streams before
+the process exits.
+
+### Redis Interaction
+
+Redis stores job payloads, job state transitions, retry schedules, distributed locks, queue event
+streams, and dead-letter records. BullMQ uses Redis locking to ensure a job is owned by one worker at
+a time, even when many workers are running across multiple machines.
+
+### Failure Handling
+
+The system treats failures as part of the normal queue lifecycle. Transient failures retry using
+exponential backoff. Stalled jobs are surfaced through queue events. Exhausted jobs are retained in
+the dead-letter queue so operators can inspect, replay, or remediate them later.
+
+See [docs/architecture.md](docs/architecture.md) for the extended system design notes.
 
 ## Retry Flow
 
