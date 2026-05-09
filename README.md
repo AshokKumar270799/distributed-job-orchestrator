@@ -97,6 +97,39 @@ for attempts, progress, failure reason, and result data.
 The HTTP server accepts work and writes jobs to Redis through BullMQ. Worker processes run separately
 and reserve jobs from Redis using BullMQ locks, allowing producers and consumers to scale independently.
 
+```mermaid
+flowchart LR
+  Client[Client]
+  API[Express API]
+  Producer[Email Producer]
+  Queue[BullMQ Email Queue]
+  Redis[(Redis)]
+  WorkerA[Email Worker A]
+  WorkerB[Email Worker B]
+  EmailService[Email Processing Service]
+  Events[Queue Events Listener]
+  DLQ[Dead-Letter Queue]
+  Logs[Structured Logs]
+
+  Client -->|POST /jobs/email| API
+  Client -->|GET /jobs/email/:id| API
+  API --> Producer
+  Producer --> Queue
+  Queue <--> Redis
+  Redis --> WorkerA
+  Redis --> WorkerB
+  WorkerA --> EmailService
+  WorkerB --> EmailService
+  WorkerA -->|exhausted retries| DLQ
+  WorkerB -->|exhausted retries| DLQ
+  DLQ --> Redis
+  Redis --> Events
+  Events --> Logs
+  API --> Logs
+  WorkerA --> Logs
+  WorkerB --> Logs
+```
+
 System flow:
 
 ```text
